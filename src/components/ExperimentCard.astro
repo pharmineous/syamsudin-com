@@ -1,0 +1,194 @@
+---
+import type { Experiment } from "../content/experiments";
+
+interface Props {
+  experiment: Experiment;
+  index: number;
+}
+
+const { experiment, index } = Astro.props;
+const startedDate = new Intl.DateTimeFormat("en", {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+}).format(new Date(experiment.started));
+---
+
+<article class="experiment-card" id={experiment.slug}>
+  <div class="experiment-meta">
+    <span class="status-badge" data-status={experiment.status.toLowerCase()}>
+      <span class="status-light" aria-hidden="true"></span>
+      {experiment.status}
+    </span>
+    <time datetime={experiment.started}>STARTED {startedDate}</time>
+  </div>
+  <p class="experiment-category">{experiment.category} <span>·</span> LOG {String(index).padStart(2, "0")}</p>
+  <h3>{experiment.title}</h3>
+  <p class="experiment-summary">{experiment.summary}</p>
+  <div class="learnings">
+    <p class="learnings-label">LEARNINGS SO FAR</p>
+    <ul>
+      {experiment.learnings.map((learning) => <li>{learning}</li>)}
+    </ul>
+  </div>
+  <p class="experiment-footer">FIELD LOG / {String(index).padStart(2, "0")}</p>
+</article>
+
+<style>
+  .experiment-card {
+    min-width: 0;
+    padding: 21px 22px 18px;
+    border: 1px solid var(--line);
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 31px,
+        rgb(243 239 230 / 2%) 32px,
+        transparent 33px
+      ),
+      var(--surface);
+  }
+
+  .experiment-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--line);
+    color: var(--quiet);
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+  }
+
+  .status-light {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--quiet);
+  }
+
+  .status-badge[data-status="active"] .status-light {
+    background: var(--gold);
+  }
+
+  .status-badge[data-status="testing"] .status-light {
+    background: #aaa58c;
+  }
+
+  .status-badge[data-status="exploring"] .status-light {
+    background: #8d9a83;
+  }
+
+  .status-badge[data-status="paused"] .status-light {
+    background: #988277;
+  }
+
+  .status-badge[data-status="completed"] .status-light {
+    background: var(--quiet);
+  }
+
+  .experiment-category {
+    margin: 20px 0 9px;
+    color: var(--gold);
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: .11em;
+  }
+
+  .experiment-category span {
+    padding: 0 4px;
+    color: var(--quiet);
+  }
+
+  .experiment-card h3 {
+    margin: 0 0 10px;
+    font-family: var(--serif);
+    font-size: clamp(25px, 2.5vw, 32px);
+    font-weight: 400;
+    letter-spacing: -.015em;
+    line-height: 1.08;
+  }
+
+  .experiment-summary {
+    max-width: 540px;
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  .learnings {
+    padding-top: 15px;
+    border-top: 1px solid var(--line);
+  }
+
+  .learnings-label,
+  .experiment-footer {
+    color: var(--quiet);
+    font-family: var(--mono);
+    font-size: 7px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .learnings-label {
+    margin: 0 0 12px;
+  }
+
+  .learnings ul {
+    display: grid;
+    gap: 9px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .learnings li {
+    position: relative;
+    padding-left: 13px;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 10px;
+    line-height: 1.55;
+  }
+
+  .learnings li::before {
+    position: absolute;
+    top: .55em;
+    left: 0;
+    width: 4px;
+    height: 4px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    content: "";
+  }
+
+  .experiment-footer {
+    margin: 18px 0 0;
+    text-align: right;
+  }
+
+  @media (max-width: 560px) {
+    .experiment-card {
+      padding: 18px 17px 16px;
+    }
+
+    .experiment-meta {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 7px;
+    }
+  }
+</style>

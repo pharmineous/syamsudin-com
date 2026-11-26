@@ -1,0 +1,134 @@
+---
+import type { Article } from "../content/articles";
+
+interface Props {
+  article: Article;
+  index: number;
+}
+
+const { article, index } = Astro.props;
+const href = article.url ?? `/writing#${article.slug}`;
+const formattedDate = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+}).format(new Date(article.date));
+---
+
+<a class="writing-entry" id={article.slug} href={href}>
+  <span class="entry-number">{String(index).padStart(2, "0")}</span>
+  <div class="entry-copy">
+    <p class="entry-topic">
+      {article.category}<span aria-hidden="true">·</span>
+      <time datetime={article.date}>{formattedDate}</time>
+    </p>
+    <h3>{article.title}</h3>
+    <p class="entry-summary">{article.summary}</p>
+  </div>
+  <span class="entry-arrow" aria-hidden="true">↗</span>
+</a>
+
+<style>
+  .writing-entry {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 24px;
+    align-items: start;
+    gap: 19px;
+    padding: 25px 0 27px;
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+    text-decoration: none;
+    transition: color 180ms ease;
+  }
+
+  .entry-number,
+  .entry-topic {
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 400;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .entry-number {
+    padding-top: 4px;
+    color: var(--quiet);
+  }
+
+  .entry-topic {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    color: var(--gold);
+  }
+
+  .entry-topic span {
+    color: var(--quiet);
+  }
+
+  .entry-topic time {
+    color: var(--quiet);
+  }
+
+  .entry-copy h3 {
+    margin: 0 0 8px;
+    font-family: var(--serif);
+    font-size: clamp(25px, 3vw, 34px);
+    font-weight: 400;
+    letter-spacing: -.015em;
+    line-height: 1.08;
+    transition: color 180ms ease;
+  }
+
+  .entry-summary {
+    max-width: 650px;
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  .entry-arrow {
+    padding-top: 2px;
+    color: var(--quiet);
+    font-size: 14px;
+    transition: color 180ms ease, transform 180ms ease;
+  }
+
+  .writing-entry:hover .entry-copy h3 {
+    color: var(--gold);
+  }
+
+  .writing-entry:hover .entry-arrow {
+    transform: translate(2px, -2px);
+    color: var(--gold);
+  }
+
+  .writing-entry:focus-visible {
+    outline: 1px solid var(--gold);
+    outline-offset: 5px;
+  }
+
+  @media (max-width: 560px) {
+    .writing-entry {
+      grid-template-columns: 28px minmax(0, 1fr) 15px;
+      gap: 10px;
+      padding: 22px 0;
+    }
+
+    .entry-copy h3 {
+      font-size: 27px;
+    }
+
+    .entry-summary {
+      font-size: 10px;
+    }
+
+    .entry-topic {
+      font-size: 7px;
+      letter-spacing: .09em;
+    }
+  }
+</style>

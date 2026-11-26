@@ -1,0 +1,81 @@
+---
+import type { Observation } from "../content/observations";
+
+interface Props {
+  observation: Observation;
+  index: number;
+}
+
+const { observation, index } = Astro.props;
+const formattedDate = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+}).format(new Date(observation.date));
+---
+
+<article class="observation-card" id={observation.id}>
+  <div class="observation-meta">
+    <span class="observation-topic">{observation.topic}</span>
+    <time datetime={observation.date}>{formattedDate}</time>
+  </div>
+  <p class="observation-content">{observation.content}</p>
+  <span class="observation-index">NOTE {String(index).padStart(2, "0")}</span>
+</article>
+
+<style>
+  .observation-card {
+    min-width: 0;
+    min-height: 205px;
+    padding: 28px 24px 20px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .observation-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 14px;
+    margin-bottom: 19px;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .observation-topic {
+    color: var(--gold);
+  }
+
+  .observation-meta time {
+    color: var(--quiet);
+  }
+
+  .observation-content {
+    max-width: 500px;
+    margin: 0 0 22px;
+    color: var(--text);
+    font-family: var(--serif);
+    font-size: clamp(20px, 2.1vw, 25px);
+    line-height: 1.2;
+  }
+
+  .observation-index {
+    color: var(--quiet);
+    font-family: var(--mono);
+    font-size: 7px;
+    letter-spacing: .13em;
+  }
+
+  @media (max-width: 560px) {
+    .observation-card {
+      min-height: auto;
+      padding: 23px 0;
+    }
+
+    .observation-content {
+      max-width: 420px;
+      font-size: 23px;
+    }
+  }
+</style>

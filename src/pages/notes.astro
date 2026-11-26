@@ -1,0 +1,342 @@
+---
+import ObservationCard from "../components/ObservationCard.astro";
+import { getObservations } from "../content/observations";
+
+const observations = getObservations();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta
+      name="description"
+      content="Short observations, lessons, and questions from the Field Notes notebook."
+    />
+    <meta name="theme-color" content="#0b0b0a" />
+    <title>Notes — Field Notes</title>
+  </head>
+  <body>
+    <main>
+      <header class="site-header">
+        <a class="publication-mark" href="/" aria-label="Field Notes, home">
+          <span class="mark-icon" aria-hidden="true">f.</span>
+          <span>FIELD NOTES</span>
+        </a>
+        <nav aria-label="Main navigation">
+          <a href="/#observations">Insights</a>
+          <a href="/writing">Writing</a>
+          <a href="/experiments">Experiments</a>
+          <a href="#notes" aria-current="page">Notes</a>
+        </nav>
+      </header>
+
+      <section class="notes-page" id="notes" aria-labelledby="notes-title">
+        <p class="eyebrow"><span class="eyebrow-rule"></span> THE NOTEBOOK</p>
+        <div class="page-heading">
+          <div>
+            <h1 id="notes-title">Notes<span>.</span></h1>
+            <p class="page-intro">
+              Quick thoughts, lessons learned, and small ideas worth keeping.
+            </p>
+          </div>
+          <p class="note-count">{String(observations.length).padStart(2, "0")} ENTRIES</p>
+        </div>
+        <div class="notes-list">
+          {observations.map((observation, index) => (
+            <ObservationCard observation={observation} index={index + 1} />
+          ))}
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <p>Curated by Firman Syamsudin. <span>Stay curious.</span></p>
+        <a href="/">BACK TO THE BEGINNING ↑</a>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap");
+
+  :root {
+    color-scheme: dark;
+    --bg: #0b0b0a;
+    --text: #f3efe6;
+    --muted: #a7a399;
+    --quiet: #77746b;
+    --gold: #b8a06a;
+    --line: #292822;
+    --serif: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans: "DM Sans", "Helvetica Neue", sans-serif;
+    --mono: "DM Mono", "SFMono-Regular", Consolas, monospace;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 30px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main {
+    width: min(1120px, calc(100% - 96px));
+    margin-inline: auto;
+  }
+
+  .site-header {
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .publication-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .14em;
+    text-decoration: none;
+  }
+
+  .mark-icon {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #494438;
+    border-radius: 50%;
+    color: var(--gold);
+    font-family: var(--serif);
+    font-size: 19px;
+    font-style: italic;
+    letter-spacing: -.05em;
+  }
+
+  .site-header nav {
+    display: flex;
+    gap: 31px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .site-header nav a,
+  .site-footer a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 180ms ease;
+  }
+
+  .site-header nav a:hover,
+  .site-header nav a[aria-current="page"],
+  .site-footer a:hover {
+    color: var(--gold);
+  }
+
+  .notes-page {
+    min-height: calc(100svh - 151px);
+    padding: 89px 0 100px;
+  }
+
+  .eyebrow,
+  .note-count,
+  .site-footer a {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .notes-page > .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 23px;
+    color: var(--gold);
+  }
+
+  .eyebrow-rule {
+    width: 26px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .page-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 36px;
+  }
+
+  .page-heading h1 {
+    margin: 0 0 13px;
+    font-family: var(--serif);
+    font-size: clamp(58px, 8vw, 86px);
+    font-weight: 400;
+    letter-spacing: -.04em;
+    line-height: .9;
+  }
+
+  .page-heading h1 span {
+    color: var(--gold);
+  }
+
+  .page-intro {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .note-count {
+    margin: 0 0 5px;
+    color: var(--quiet);
+    font-size: 8px;
+    white-space: nowrap;
+  }
+
+  .notes-list {
+    border-top: 1px solid var(--line);
+  }
+
+  .notes-list .observation-card {
+    min-height: 0;
+    padding: 27px 0 29px;
+  }
+
+  .notes-list .observation-content {
+    max-width: 760px;
+    font-size: clamp(24px, 3vw, 32px);
+    line-height: 1.16;
+  }
+
+  .site-footer {
+    min-height: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  .site-footer p {
+    margin: 0;
+    color: var(--quiet);
+    font-size: 10px;
+  }
+
+  .site-footer p span {
+    color: var(--muted);
+  }
+
+  .site-footer a {
+    color: var(--quiet);
+    font-size: 7px;
+  }
+
+  a:focus-visible {
+    outline: 1px solid var(--gold);
+    outline-offset: 5px;
+  }
+
+  @media (max-width: 820px) {
+    main {
+      width: min(100% - 56px, 680px);
+    }
+
+    .notes-page {
+      padding: 70px 0 76px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    main {
+      width: calc(100% - 38px);
+    }
+
+    .site-header {
+      height: 67px;
+    }
+
+    .site-header nav {
+      gap: 14px;
+      font-size: 9px;
+    }
+
+    .publication-mark {
+      gap: 7px;
+      font-size: 8px;
+    }
+
+    .mark-icon {
+      width: 27px;
+      height: 27px;
+    }
+
+    .notes-page {
+      min-height: calc(100svh - 147px);
+      padding: 58px 0 65px;
+    }
+
+    .page-heading {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 26px;
+    }
+
+    .page-heading h1 {
+      font-size: 64px;
+    }
+
+    .notes-list .observation-card {
+      padding: 23px 0;
+    }
+
+    .notes-list .observation-content {
+      font-size: 25px;
+    }
+
+    .site-footer {
+      min-height: 80px;
+      align-items: flex-start;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      padding: 18px 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
