@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0b0b0a" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Local publishing workbench — Field Notes</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap");
@@ -183,11 +184,52 @@
         margin-bottom: 17px;
       }
 
+      .mode-switch {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .mode-switch button[aria-pressed="true"] {
+        background: var(--gold);
+        color: var(--bg);
+      }
+
+      .manage-panel {
+        display: grid;
+        gap: 20px;
+        padding: 25px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+      }
+
+      .manage-panel[hidden] {
+        display: none;
+      }
+
+      .markdown-editor {
+        min-height: 360px;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre;
+      }
+
       .actions {
         display: flex;
         align-items: center;
         gap: 16px;
         margin-top: 23px;
+      }
+
+      #delete-existing {
+        border-color: #9f675c;
+        color: #d49b87;
+      }
+
+      #delete-existing:hover {
+        background: #9f675c;
+        color: var(--bg);
       }
 
       button {
@@ -208,8 +250,12 @@
       }
 
       button:disabled {
-        cursor: wait;
+        cursor: not-allowed;
         opacity: .6;
+      }
+
+      button:disabled[data-busy="true"] {
+        cursor: wait;
       }
 
       .status {
@@ -240,7 +286,8 @@
           padding: 55px 0 65px;
         }
 
-        form {
+        form,
+        .manage-panel {
           padding: 17px;
         }
 
@@ -272,7 +319,7 @@
         <p class="eyebrow">LOCAL AUTHORING ONLY</p>
         <h1>A place to put<br />the next <em>note.</em></h1>
         <p class="intro">
-          Create a Markdown entry and save it directly into this project with your browser.
+          Create, edit, or delete Markdown entries directly in this project with your browser.
           No API, database, or hosted service is involved. This workbench only runs with
           the local development server and is not included in production builds.
         </p>
@@ -280,8 +327,13 @@
         <div class="folder-picker">
           <button type="button" id="choose-folder">Choose src/content folder</button>
           <p class="status" id="folder-status" role="status" aria-live="polite">
-            Select this project's <code>src/content</code> folder to save entries in place.
+            Select this project's <code>src/content</code> folder to manage entries in place.
           </p>
+        </div>
+
+        <div class="mode-switch" role="group" aria-label="Publishing workbench mode">
+          <button type="button" id="create-mode" aria-pressed="true">Create new</button>
+          <button type="button" id="manage-mode" aria-pressed="false">Manage existing</button>
         </div>
 
         <form id="entry-form">
@@ -295,6 +347,31 @@
             <p class="status" id="status" role="status" aria-live="polite"></p>
           </div>
         </form>
+
+        <div class="manage-panel" id="manage-panel" hidden>
+          <div class="field">
+            <label for="existing-entry">Markdown entry</label>
+            <select id="existing-entry" disabled>
+              <option value="">Choose an entry</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="existing-markdown">Markdown source</label>
+            <textarea id="existing-markdown" class="markdown-editor" spellcheck="false" disabled></textarea>
+            <p class="help">
+              Edit the complete Markdown file, including its frontmatter. Keep the required collection fields;
+              saving overwrites this file in place.
+            </p>
+          </div>
+          <div class="actions">
+            <button type="button" id="refresh-existing" disabled>Refresh entries</button>
+            <button type="button" id="save-existing" disabled>Save changes</button>
+            <button type="button" id="delete-existing" disabled>Delete entry</button>
+            <p class="status" id="manage-status" role="status" aria-live="polite">
+              Choose this project's <code>src/content</code> folder above to manage entries.
+            </p>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -304,10 +381,22 @@
       const saveButton = document.querySelector("#save-button");
       const folderStatus = document.querySelector("#folder-status");
       const chooseFolderButton = document.querySelector("#choose-folder");
+      const createModeButton = document.querySelector("#create-mode");
+      const manageModeButton = document.querySelector("#manage-mode");
+      const managePanel = document.querySelector("#manage-panel");
+      const existingEntrySelect = document.querySelector("#existing-entry");
+      const existingMarkdown = document.querySelector("#existing-markdown");
+      const refreshExistingButton = document.querySelector("#refresh-existing");
+      const saveExistingButton = document.querySelector("#save-existing");
+      const deleteExistingButton = document.querySelector("#delete-existing");
+      const manageStatus = document.querySelector("#manage-status");
       const collectionSelect = document.createElement("select");
       collectionSelect.name = "collection";
       collectionSelect.setAttribute("aria-label", "Content collection");
       let contentDirectory = null;
+      let existingEntries = [];
+      let currentEntry = null;
+      let fileOperationBusy = false;
 
       const definitions = {
         articles: [
@@ -376,6 +465,152 @@
         const text = collection === "notes" ? source.split(/\s+/).slice(0, 8).join(" ") : source;
         document.querySelector("#slug-preview").textContent =
           `${collection || "collection"}/${slugify(text) || "new-entry"}.md`;
+      }
+
+      function entryPath(entry) {
+        return `${entry.collection}/${entry.name}`;
+      }
+
+      function showMode(mode) {
+        const creating = mode === "create";
+        form.hidden = !creating;
+        managePanel.hidden = creating;
+        createModeButton.setAttribute("aria-pressed", String(creating));
+        manageModeButton.setAttribute("aria-pressed", String(!creating));
+        if (!creating && !contentDirectory) {
+          manageStatus.dataset.state = "";
+          manageStatus.textContent = "Choose this project's src/content folder above to manage entries.";
+        }
+      }
+
+      function updateExistingSaveButton() {
+        saveExistingButton.disabled =
+          fileOperationBusy || !currentEntry || existingMarkdown.value === currentEntry.markdown;
+      }
+
+      function setFileOperationBusy(busy) {
+        fileOperationBusy = busy;
+        const controls = [
+          chooseFolderButton,
+          createModeButton,
+          manageModeButton,
+          saveButton,
+          existingEntrySelect,
+          existingMarkdown,
+          refreshExistingButton,
+          saveExistingButton,
+          deleteExistingButton,
+        ];
+        for (const control of controls) {
+          control.disabled = busy;
+          if (busy) control.dataset.busy = "true";
+          else delete control.dataset.busy;
+        }
+        if (busy) return;
+
+        chooseFolderButton.disabled = false;
+        createModeButton.disabled = false;
+        manageModeButton.disabled = false;
+        saveButton.disabled = !contentDirectory && typeof window.showDirectoryPicker === "function";
+        existingEntrySelect.disabled = !contentDirectory || existingEntries.length === 0;
+        existingMarkdown.disabled = !currentEntry;
+        refreshExistingButton.disabled = !contentDirectory;
+        deleteExistingButton.disabled = !currentEntry;
+        updateExistingSaveButton();
+      }
+
+      async function refreshExistingEntries(directory = contentDirectory) {
+        const entries = [];
+        for (const collection of Object.keys(definitions)) {
+          const collectionDirectory = await directory.getDirectoryHandle(collection);
+          for await (const [name, handle] of collectionDirectory.entries()) {
+            if (handle.kind === "file" && name.toLowerCase().endsWith(".md")) {
+              entries.push({ collection, name, handle, directory: collectionDirectory, markdown: "" });
+            }
+          }
+        }
+
+        entries.sort(
+          (first, second) =>
+            first.collection.localeCompare(second.collection) || first.name.localeCompare(second.name),
+        );
+        existingEntries = entries;
+        existingEntrySelect.replaceChildren();
+
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = entries.length ? "Choose an entry" : "No Markdown entries found";
+        existingEntrySelect.append(placeholder);
+
+        for (const entry of entries) {
+          const option = document.createElement("option");
+          option.value = entryPath(entry);
+          option.textContent = entryPath(entry);
+          existingEntrySelect.append(option);
+        }
+
+        existingEntrySelect.disabled = entries.length === 0;
+        existingEntrySelect.value = "";
+        existingMarkdown.value = "";
+        existingMarkdown.disabled = true;
+        currentEntry = null;
+        folderStatus.dataset.state = "success";
+        folderStatus.textContent = `Content folder selected. Found ${entries.length} Markdown entries.`;
+        manageStatus.dataset.state = "";
+        manageStatus.textContent = entries.length
+          ? "Choose an entry to edit or delete it."
+          : "Add a Markdown file to one of the collection folders, then refresh this list.";
+        setFileOperationBusy(fileOperationBusy);
+      }
+
+      async function selectExistingEntry() {
+        const selectedPath = existingEntrySelect.value;
+        if (
+          currentEntry &&
+          selectedPath !== entryPath(currentEntry) &&
+          existingMarkdown.value !== currentEntry.markdown &&
+          !window.confirm("Discard your unsaved changes?")
+        ) {
+          existingEntrySelect.value = entryPath(currentEntry);
+          return;
+        }
+
+        currentEntry = null;
+        existingMarkdown.value = "";
+        existingMarkdown.disabled = true;
+        updateExistingSaveButton();
+        deleteExistingButton.disabled = true;
+
+        if (!selectedPath) {
+          manageStatus.dataset.state = "";
+          manageStatus.textContent = "Choose an entry to edit or delete it.";
+          return;
+        }
+
+        const entry = existingEntries.find((item) => entryPath(item) === selectedPath);
+        if (!entry) {
+          existingEntrySelect.value = "";
+          manageStatus.dataset.state = "error";
+          manageStatus.textContent = "The selected Markdown file is no longer in the content folder. Refresh the list.";
+          return;
+        }
+
+        try {
+          const file = await entry.handle.getFile();
+          const markdown = await file.text();
+          if (existingEntrySelect.value !== selectedPath) return;
+          entry.markdown = markdown;
+          currentEntry = entry;
+          existingMarkdown.value = entry.markdown;
+          existingMarkdown.disabled = false;
+          deleteExistingButton.disabled = false;
+          manageStatus.dataset.state = "";
+          manageStatus.textContent = `Loaded ${entryPath(entry)}.`;
+        } catch (error) {
+          manageStatus.dataset.state = "error";
+          manageStatus.textContent =
+            error instanceof Error ? error.message : "Could not read the selected Markdown file.";
+        }
       }
 
       function buildEntry(collection, data) {
@@ -453,16 +688,19 @@
 
       async function chooseContentFolder() {
         if (typeof window.showDirectoryPicker !== "function") return;
+        if (
+          currentEntry &&
+          existingMarkdown.value !== currentEntry.markdown &&
+          !window.confirm("Discard your unsaved changes before choosing another folder?")
+        ) {
+          return;
+        }
 
+        folderStatus.dataset.state = "";
+        folderStatus.textContent = "Choose this project's src/content folder in the picker.";
+        let directory;
         try {
-          const directory = await window.showDirectoryPicker({ mode: "readwrite" });
-          for (const collection of Object.keys(definitions)) {
-            await directory.getDirectoryHandle(collection);
-          }
-          contentDirectory = directory;
-          folderStatus.dataset.state = "success";
-          folderStatus.textContent = "Content folder selected. New files will be written into its collection folders.";
-          saveButton.disabled = false;
+          directory = await window.showDirectoryPicker({ mode: "readwrite" });
         } catch (error) {
           if (error instanceof Error && error.name === "AbortError") {
             folderStatus.textContent = "Folder selection cancelled.";
@@ -470,18 +708,52 @@
           }
           folderStatus.dataset.state = "error";
           folderStatus.textContent =
-            "Choose the project's src/content folder (it must contain articles, notes, and experiments).";
+            error instanceof Error ? `Could not open the folder picker: ${error.message}` : "Could not open the folder picker.";
+          return;
+        }
+
+        const previousDirectory = contentDirectory;
+        try {
+          for (const collection of Object.keys(definitions)) {
+            try {
+              await directory.getDirectoryHandle(collection);
+            } catch (error) {
+              if (error instanceof Error && error.name === "NotFoundError") {
+                throw new Error(
+                  `The selected folder is missing "${collection}". Choose the project's src/content folder.`,
+                );
+              }
+              throw error;
+            }
+          }
+          contentDirectory = directory;
+          await refreshExistingEntries(directory);
+          saveButton.disabled = false;
+          manageModeButton.disabled = false;
+          refreshExistingButton.disabled = false;
+        } catch (error) {
+          contentDirectory = previousDirectory;
+          folderStatus.dataset.state = "error";
+          folderStatus.textContent =
+            error instanceof Error
+              ? `Could not load the selected content folder: ${error.message}`
+              : "Could not load the selected content folder.";
         }
       }
 
-      async function saveToSelectedFolder(collection, slug, markdown) {
-        const permission = await contentDirectory.queryPermission({ mode: "readwrite" });
+      async function ensureWritePermission(directory = contentDirectory) {
+        const permission = await directory.queryPermission({ mode: "readwrite" });
         const granted =
           permission === "granted" ||
-          (await contentDirectory.requestPermission({ mode: "readwrite" })) === "granted";
+          (await directory.requestPermission({ mode: "readwrite" })) === "granted";
         if (!granted) throw new Error("Write permission was not granted for the selected folder.");
+      }
 
-        const directory = await contentDirectory.getDirectoryHandle(collection);
+      async function saveToSelectedFolder(collection, slug, markdown) {
+        const rootDirectory = contentDirectory;
+        await ensureWritePermission(rootDirectory);
+
+        const directory = await rootDirectory.getDirectoryHandle(collection);
         for (let suffix = 1; ; suffix += 1) {
           const filename = `${slug}${suffix === 1 ? "" : `-${suffix}`}.md`;
           try {
@@ -513,6 +785,97 @@
         link.remove();
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
         return filename;
+      }
+
+      function hasFrontmatter(markdown) {
+        return /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.test(markdown);
+      }
+
+      async function saveExistingEntry() {
+        if (!currentEntry) return;
+        const entry = currentEntry;
+        const directory = contentDirectory;
+        const markdown = existingMarkdown.value;
+        if (!hasFrontmatter(markdown)) {
+          manageStatus.dataset.state = "error";
+          manageStatus.textContent = "Keep a YAML frontmatter block at the top of the Markdown file.";
+          return;
+        }
+
+        saveExistingButton.disabled = true;
+        manageStatus.dataset.state = "";
+        manageStatus.textContent = "Saving changes…";
+        setFileOperationBusy(true);
+
+        try {
+          await ensureWritePermission(directory);
+          const writable = await entry.handle.createWritable();
+          try {
+            await writable.write(markdown);
+            await writable.close();
+          } catch (error) {
+            await writable.abort();
+            throw error;
+          }
+          entry.markdown = markdown;
+          manageStatus.dataset.state = "success";
+          manageStatus.textContent = `Saved ${entryPath(entry)}.`;
+        } catch (error) {
+          manageStatus.dataset.state = "error";
+          manageStatus.textContent =
+            error instanceof Error ? error.message : "Could not save the selected Markdown file.";
+        } finally {
+          setFileOperationBusy(false);
+        }
+      }
+
+      async function deleteExistingEntry() {
+        if (!currentEntry) return;
+        const entry = currentEntry;
+        const directory = contentDirectory;
+        const path = entryPath(entry);
+        const hasUnsavedChanges = existingMarkdown.value !== entry.markdown;
+        const confirmation = hasUnsavedChanges
+          ? `Delete ${path}? This permanently removes the file and discards unsaved changes.`
+          : `Delete ${path}? This permanently removes the file.`;
+        if (!window.confirm(confirmation)) {
+          manageStatus.textContent = "Deletion cancelled.";
+          return;
+        }
+
+        deleteExistingButton.disabled = true;
+        manageStatus.dataset.state = "";
+        manageStatus.textContent = "Deleting…";
+        setFileOperationBusy(true);
+
+        try {
+          await ensureWritePermission(directory);
+          await entry.directory.removeEntry(entry.name);
+          if (currentEntry === entry) {
+            currentEntry = null;
+            existingEntrySelect.value = "";
+            existingMarkdown.value = "";
+            existingMarkdown.disabled = true;
+            updateExistingSaveButton();
+          }
+          try {
+            await refreshExistingEntries(directory);
+            manageStatus.dataset.state = "success";
+            manageStatus.textContent = `Deleted ${path}.`;
+          } catch (error) {
+            manageStatus.dataset.state = "error";
+            manageStatus.textContent =
+              `Deleted ${path}, but could not refresh the list: ${
+                error instanceof Error ? error.message : "unknown error"
+              }`;
+          }
+        } catch (error) {
+          manageStatus.dataset.state = "error";
+          manageStatus.textContent =
+            error instanceof Error ? error.message : "Could not delete the selected Markdown file.";
+        } finally {
+          setFileOperationBusy(false);
+        }
       }
 
       function renderFields() {
@@ -575,6 +938,32 @@
       fields.addEventListener("change", updateSlug);
       collectionSelect.addEventListener("change", renderFields);
       chooseFolderButton.addEventListener("click", chooseContentFolder);
+      createModeButton.addEventListener("click", () => showMode("create"));
+      manageModeButton.addEventListener("click", () => showMode("manage"));
+      existingEntrySelect.addEventListener("change", selectExistingEntry);
+      existingMarkdown.addEventListener("input", updateExistingSaveButton);
+      refreshExistingButton.addEventListener("click", async () => {
+        if (
+          currentEntry &&
+          existingMarkdown.value !== currentEntry.markdown &&
+          !window.confirm("Discard your unsaved changes and refresh the list?")
+        ) {
+          return;
+        }
+
+        refreshExistingButton.disabled = true;
+        try {
+          await refreshExistingEntries();
+        } catch (error) {
+          manageStatus.dataset.state = "error";
+          manageStatus.textContent =
+            error instanceof Error ? error.message : "Could not refresh the content list.";
+        } finally {
+          refreshExistingButton.disabled = false;
+        }
+      });
+      saveExistingButton.addEventListener("click", saveExistingEntry);
+      deleteExistingButton.addEventListener("click", deleteExistingEntry);
       collectionSelect.value = "articles";
       renderFields();
 
@@ -594,6 +983,24 @@
             ? await saveToSelectedFolder(collection, slug, markdown)
             : downloadMarkdown(collection, slug, markdown);
 
+          if (contentDirectory) {
+            if (currentEntry && existingMarkdown.value !== currentEntry.markdown) {
+              manageStatus.dataset.state = "error";
+              manageStatus.textContent =
+                "The new entry was saved. Save or discard current edits, then refresh the existing entries list.";
+            } else {
+              try {
+                await refreshExistingEntries();
+              } catch (error) {
+                folderStatus.dataset.state = "error";
+                folderStatus.textContent =
+                  `The new entry was saved, but the list could not be refreshed: ${
+                    error instanceof Error ? error.message : "unknown error"
+                  }`;
+              }
+            }
+          }
+
           status.dataset.state = "success";
           status.textContent = contentDirectory
             ? `Saved src/content/${path}`
@@ -611,10 +1018,12 @@
 
       if (typeof window.showDirectoryPicker !== "function") {
         folderStatus.textContent =
-          "Direct folder saving is unavailable in this browser. Saving downloads a Markdown file to move into src/content/.";
+          "This browser can download new Markdown, but to list, edit, or delete files, use a browser with the File System Access API.";
         folderStatus.dataset.state = "error";
         saveButton.disabled = false;
         chooseFolderButton.hidden = true;
+        manageModeButton.disabled = true;
+        refreshExistingButton.disabled = true;
       }
     </script>
   </body>

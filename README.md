@@ -42,10 +42,12 @@ All commands are run from the root of the project, from a terminal:
 
 Run `npm run dev` and open `/admin` on the local site to create an article, note, or
 experiment. Choose this project's `src/content/` folder when prompted; the browser writes
-the new Markdown file directly into its collection folder. The workbench is served only by
-the local development server and is not included in production builds. Browsers without
-the File System Access API download the Markdown file instead, so it must be moved into the
-matching folder manually.
+new Markdown files directly into their collection folder. Switch to **Manage existing** to
+load the collection files, edit their raw Markdown in place, or delete an entry. The
+workbench is served only by the local development server and is not included in production
+builds. Browsers without the File System Access API can download new Markdown files, but
+cannot edit or delete existing files; use a supported browser or edit them in the project
+folder instead.
 
 Content files live in:
 
@@ -54,9 +56,10 @@ Content files live in:
 - `src/content/notes/` — language, date, and topic in frontmatter, with the note itself as Markdown.
 - `src/content/experiments/` — language, title, status, start date, category, summary, and learnings.
 
-Edit existing entries directly in their Markdown files. A file's name is its stable
-collection ID. Use the language switcher to show all entries or filter to Indonesian (`ID`)
-or English (`EN`); the selection is remembered in this browser. An article's optional
+Existing entries can be edited in the workbench's raw Markdown editor or directly in their
+files. A file's name is its stable collection ID. Use the language switcher to show all
+entries or filter to Indonesian (`ID`) or English (`EN`); the selection is remembered in
+this browser. An article's optional
 translated summary must be written manually and appears when filtering by that language;
 the title and link continue to represent the article's primary language. Article URLs can
 point to published LinkedIn articles; otherwise, article cards link to their entry in the
