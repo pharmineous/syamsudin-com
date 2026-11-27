@@ -23,6 +23,14 @@
           <a href="/experiments">Experiments</a>
           <a href="/notes">Notes</a>
           <a href="/about" aria-current="page">About</a>
+          <label class="language-switcher">
+            <span aria-hidden="true">LANG</span>
+            <select aria-label="Filter content language">
+              <option value="all">All</option>
+              <option value="id">ID</option>
+              <option value="en">EN</option>
+            </select>
+          </label>
         </nav>
       </header>
 
@@ -112,6 +120,7 @@
         <a href="/">BACK TO THE BEGINNING ↑</a>
       </footer>
     </main>
+    <script is:inline src="/language-filter.js"></script>
   </body>
 </html>
 
@@ -193,6 +202,24 @@
     gap: 31px;
     color: var(--muted);
     font-size: 11px;
+  }
+
+  .language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--quiet);
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+
+  .language-switcher select {
+    border: 1px solid var(--line);
+    padding: 4px 5px;
+    background: var(--bg);
+    color: var(--muted);
+    font: inherit;
   }
 
   .site-header nav a,
@@ -413,11 +440,28 @@
     }
 
     .site-header {
-      height: 67px;
+      height: auto;
+      min-height: 67px;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+      padding: 10px 0;
     }
 
     .site-header nav {
-      gap: 10px;
+      order: 3;
+      width: 100%;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 8px;
+    }
+
+    .language-switcher {
+      gap: 4px;
+      font-size: 7px;
+    }
+
+    .language-switcher select {
+      padding: 2px 3px;
       font-size: 8px;
     }
 

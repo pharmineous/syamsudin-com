@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b0a" />
+    <title>Local publishing workbench — Field Notes</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap");
+
+      :root {
+        color-scheme: dark;
+        --bg: #0b0b0a;
+        --surface: #11110f;
+        --text: #f3efe6;
+        --muted: #a7a399;
+        --quiet: #77746b;
+        --gold: #b8a06a;
+        --line: #292822;
+        --serif: "Instrument Serif", Georgia, serif;
+        --sans: "DM Sans", "Helvetica Neue", sans-serif;
+        --mono: "DM Mono", Consolas, monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        width: min(820px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 76px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .mark,
+      .eyebrow,
+      label,
+      .slug-label,
+      .back-link {
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+      }
+
+      .mark {
+        color: var(--gold);
+        text-decoration: none;
+      }
+
+      .back-link {
+        color: var(--muted);
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        color: var(--gold);
+      }
+
+      section {
+        padding: 75px 0 90px;
+      }
+
+      .eyebrow {
+        margin: 0 0 21px;
+        color: var(--gold);
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-family: var(--serif);
+        font-size: clamp(48px, 8vw, 72px);
+        font-weight: 400;
+        letter-spacing: -.035em;
+        line-height: .98;
+      }
+
+      .intro {
+        max-width: 580px;
+        margin: 0 0 38px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+
+      form {
+        padding: 25px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+      }
+
+      .fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px 16px;
+      }
+
+      .field {
+        display: grid;
+        align-content: start;
+        gap: 8px;
+      }
+
+      .field.wide {
+        grid-column: 1 / -1;
+      }
+
+      label,
+      .slug-label {
+        color: var(--quiet);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid #3a3830;
+        border-radius: 0;
+        padding: 12px;
+        background: #0c0c0b;
+        color: var(--text);
+        font: 13px/1.6 var(--sans);
+      }
+
+      textarea {
+        min-height: 126px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 1px solid var(--gold);
+        outline-offset: 1px;
+      }
+
+      .help {
+        margin: 0;
+        color: var(--quiet);
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .slug-preview {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 21px;
+        padding-top: 15px;
+        border-top: 1px solid var(--line);
+      }
+
+      .slug-value {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 10px;
+        overflow-wrap: anywhere;
+      }
+
+      .folder-picker {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        margin-bottom: 17px;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 23px;
+      }
+
+      button {
+        border: 1px solid var(--gold);
+        padding: 12px 17px;
+        background: transparent;
+        color: var(--gold);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--gold);
+        color: var(--bg);
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: .6;
+      }
+
+      .status {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .status[data-state="error"] {
+        color: #d49b87;
+      }
+
+      .status a {
+        color: var(--gold);
+      }
+
+      @media (max-width: 560px) {
+        main {
+          width: calc(100% - 36px);
+        }
+
+        header {
+          min-height: 66px;
+        }
+
+        section {
+          padding: 55px 0 65px;
+        }
+
+        form {
+          padding: 17px;
+        }
+
+        .fields {
+          grid-template-columns: 1fr;
+          gap: 17px;
+        }
+
+        .field.wide {
+          grid-column: auto;
+        }
+
+        .actions {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <a class="mark" href="/">FIELD NOTES / LOCAL WORKBENCH</a>
+        <a class="back-link" href="/">VIEW SITE ↗</a>
+      </header>
+
+      <section>
+        <p class="eyebrow">LOCAL AUTHORING ONLY</p>
+        <h1>A place to put<br />the next <em>note.</em></h1>
+        <p class="intro">
+          Create a Markdown entry and save it directly into this project with your browser.
+          No API, database, or hosted service is involved. This workbench only runs with
+          the local development server and is not included in production builds.
+        </p>
+
+        <div class="folder-picker">
+          <button type="button" id="choose-folder">Choose src/content folder</button>
+          <p class="status" id="folder-status" role="status" aria-live="polite">
+            Select this project's <code>src/content</code> folder to save entries in place.
+          </p>
+        </div>
+
+        <form id="entry-form">
+          <div class="fields" id="fields"></div>
+          <div class="slug-preview" aria-live="polite">
+            <span class="slug-label">Filename</span>
+            <span class="slug-value" id="slug-preview">Choose a collection</span>
+          </div>
+          <div class="actions">
+            <button type="submit" id="save-button" disabled>Save Markdown file</button>
+            <p class="status" id="status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector("#entry-form");
+      const fields = document.querySelector("#fields");
+      const saveButton = document.querySelector("#save-button");
+      const folderStatus = document.querySelector("#folder-status");
+      const chooseFolderButton = document.querySelector("#choose-folder");
+      const collectionSelect = document.createElement("select");
+      collectionSelect.name = "collection";
+      collectionSelect.setAttribute("aria-label", "Content collection");
+      let contentDirectory = null;
+
+      const definitions = {
+        articles: [
+          ["title", "Title", "text", true, true],
+          ["language", "Primary language", "language", true, false],
+          ["date", "Publication date", "date", true, false],
+          ["category", "Category", "text", true, false],
+          ["summary", "Summary", "textarea", true, true],
+          ["translatedSummary", "Summary in the other language (optional; write it yourself)", "textarea", false, true],
+          ["url", "LinkedIn article URL (optional)", "url", false, false],
+          ["body", "Draft / reference text (optional)", "textarea", false, true],
+        ],
+        notes: [
+          ["date", "Date", "date", true, false],
+          ["language", "Language", "language", true, false],
+          ["topic", "Topic", "text", true, false],
+          ["body", "Note", "textarea", true, true],
+        ],
+        experiments: [
+          ["title", "Title", "text", true, true],
+          ["language", "Language", "language", true, false],
+          ["status", "Status", "status", true, false],
+          ["started", "Started", "date", true, false],
+          ["category", "Category", "text", true, false],
+          ["summary", "Summary", "textarea", true, true],
+          ["learnings", "Learnings (one per line)", "textarea", true, true],
+          ["body", "Lab notes (optional)", "textarea", false, true],
+        ],
+      };
+
+      for (const [value, label] of [
+        ["articles", "Article"],
+        ["notes", "Note"],
+        ["experiments", "Experiment"],
+      ]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        collectionSelect.append(option);
+      }
+
+      function today() {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        return date.toISOString().slice(0, 10);
+      }
+
+      function slugify(value) {
+        return value
+          .normalize("NFKD")
+          .replace(/\p{Diacritic}/gu, "")
+          .toLowerCase()
+          .replace(/&/g, " and ")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 80)
+          .replace(/-+$/g, "");
+      }
+
+      function updateSlug() {
+        const collection = collectionSelect.value;
+        const sourceName = collection === "notes" ? "body" : "title";
+        const source = fields.querySelector(`[name="${sourceName}"]`)?.value ?? "";
+        const text = collection === "notes" ? source.split(/\s+/).slice(0, 8).join(" ") : source;
+        document.querySelector("#slug-preview").textContent =
+          `${collection || "collection"}/${slugify(text) || "new-entry"}.md`;
+      }
+
+      function buildEntry(collection, data) {
+        let frontmatter;
+        let body = "";
+        let source;
+
+        if (collection === "articles") {
+          const url = data.url.trim();
+          const translatedSummary = data.translatedSummary.trim();
+          if (url) {
+            let parsedUrl;
+            try {
+              parsedUrl = new URL(url);
+            } catch {
+              throw new Error("Article URL must be a valid HTTPS link.");
+            }
+            if (parsedUrl.protocol !== "https:") {
+              throw new Error("Article URL must be a valid HTTPS link.");
+            }
+          }
+          frontmatter = [
+            `title: ${JSON.stringify(data.title.trim())}`,
+            `language: ${JSON.stringify(data.language)}`,
+            `date: ${JSON.stringify(data.date)}`,
+            `summary: ${JSON.stringify(data.summary.trim())}`,
+            ...(translatedSummary ? [`translatedSummary: ${JSON.stringify(translatedSummary)}`] : []),
+            `category: ${JSON.stringify(data.category.trim())}`,
+            ...(url ? [`url: ${JSON.stringify(url)}`] : []),
+          ];
+          body = data.body.trim();
+          source = data.title;
+        } else if (collection === "notes") {
+          frontmatter = [
+            `date: ${JSON.stringify(data.date)}`,
+            `language: ${JSON.stringify(data.language)}`,
+            `topic: ${JSON.stringify(data.topic.trim())}`,
+          ];
+          body = data.body.trim();
+          source = body.replace(/[#*_`[\]()]/g, "").split(/\s+/).slice(0, 8).join(" ");
+        } else {
+          const learnings = data.learnings.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+          if (learnings.length === 0) throw new Error("Add at least one learning.");
+          frontmatter = [
+            `title: ${JSON.stringify(data.title.trim())}`,
+            `language: ${JSON.stringify(data.language)}`,
+            `status: ${JSON.stringify(data.status)}`,
+            `started: ${JSON.stringify(data.started)}`,
+            `category: ${JSON.stringify(data.category.trim())}`,
+            `summary: ${JSON.stringify(data.summary.trim())}`,
+            "learnings:",
+            ...learnings.map((learning) => `  - ${JSON.stringify(learning)}`),
+          ];
+          body = data.body.trim();
+          source = data.title;
+        }
+
+        const slug = slugify(source);
+        if (!slug) throw new Error("Could not generate a filename. Add a title or note text.");
+        return {
+          slug,
+          markdown: `---\n${frontmatter.join("\n")}\n---\n${body ? `\n${body}\n` : "\n"}`,
+        };
+      }
+
+      async function chooseContentFolder() {
+        if (typeof window.showDirectoryPicker !== "function") return;
+
+        try {
+          const directory = await window.showDirectoryPicker({ mode: "readwrite" });
+          for (const collection of Object.keys(definitions)) {
+            await directory.getDirectoryHandle(collection);
+          }
+          contentDirectory = directory;
+          folderStatus.dataset.state = "success";
+          folderStatus.textContent = "Content folder selected. New files will be written into its collection folders.";
+          saveButton.disabled = false;
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            folderStatus.textContent = "Folder selection cancelled.";
+            return;
+          }
+          folderStatus.dataset.state = "error";
+          folderStatus.textContent =
+            "Choose the project's src/content folder (it must contain articles, notes, and experiments).";
+        }
+      }
+
+      async function saveToSelectedFolder(collection, slug, markdown) {
+        const permission = await contentDirectory.queryPermission({ mode: "readwrite" });
+        const granted =
+          permission === "granted" ||
+          (await contentDirectory.requestPermission({ mode: "readwrite" })) === "granted";
+        if (!granted) throw new Error("Write permission was not granted for the selected folder.");
+
+        const directory = await contentDirectory.getDirectoryHandle(collection);
+        for (let suffix = 1; ; suffix += 1) {
+          const filename = `${slug}${suffix === 1 ? "" : `-${suffix}`}.md`;
+          try {
+            await directory.getFileHandle(filename);
+          } catch (error) {
+            if (!(error instanceof DOMException) || error.name !== "NotFoundError") throw error;
+            const file = await directory.getFileHandle(filename, { create: true });
+            const writable = await file.createWritable();
+            try {
+              await writable.write(markdown);
+              await writable.close();
+            } catch (writeError) {
+              await writable.abort();
+              throw writeError;
+            }
+            return `${collection}/${filename}`;
+          }
+        }
+      }
+
+      function downloadMarkdown(collection, slug, markdown) {
+        const filename = `${collection}-${slug}.md`;
+        const link = document.createElement("a");
+        const objectUrl = URL.createObjectURL(new Blob([markdown], { type: "text/markdown" }));
+        link.href = objectUrl;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        return filename;
+      }
+
+      function renderFields() {
+        const collection = collectionSelect.value;
+        fields.replaceChildren();
+
+        const collectionField = document.createElement("div");
+        collectionField.className = "field wide";
+        const collectionLabel = document.createElement("label");
+        collectionLabel.htmlFor = "collection";
+        collectionLabel.textContent = "Collection";
+        collectionSelect.id = "collection";
+        collectionField.append(collectionLabel, collectionSelect);
+
+        for (const [name, label, type, required, wide] of definitions[collection]) {
+          const field = document.createElement("div");
+          field.className = `field${wide ? " wide" : ""}`;
+          const inputLabel = document.createElement("label");
+          inputLabel.htmlFor = `field-${name}`;
+          inputLabel.textContent = label;
+
+          let input;
+          if (type === "status" || type === "language") {
+            input = document.createElement("select");
+            const options =
+              type === "status"
+                ? [["Exploring", "Exploring"], ["Testing", "Testing"], ["Active", "Active"], ["Paused", "Paused"], ["Completed", "Completed"]]
+                : [["id", "Bahasa Indonesia (ID)"], ["en", "English (EN)"]];
+            for (const [value, label] of options) {
+              const option = document.createElement("option");
+              option.value = value;
+              option.textContent = label;
+              input.append(option);
+            }
+          } else {
+            input = document.createElement(type === "textarea" ? "textarea" : "input");
+            if (type !== "textarea") input.type = type;
+          }
+          input.id = `field-${name}`;
+          input.name = name;
+          input.required = required;
+          if (type === "date") input.value = today();
+          if (name === "category") input.placeholder = "e.g. SYSTEMS";
+          if (name === "learnings") {
+            const help = document.createElement("p");
+            help.className = "help";
+            help.textContent = "Each non-empty line becomes one learning in the frontmatter.";
+            field.append(inputLabel, input, help);
+          } else {
+            field.append(inputLabel, input);
+          }
+          fields.append(field);
+        }
+
+        fields.prepend(collectionField);
+        updateSlug();
+      }
+
+      fields.addEventListener("input", updateSlug);
+      fields.addEventListener("change", updateSlug);
+      collectionSelect.addEventListener("change", renderFields);
+      chooseFolderButton.addEventListener("click", chooseContentFolder);
+      collectionSelect.value = "articles";
+      renderFields();
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const status = document.querySelector("#status");
+        const data = Object.fromEntries(new FormData(form).entries());
+        const collection = data.collection;
+        delete data.collection;
+        saveButton.disabled = true;
+        status.dataset.state = "";
+        status.textContent = "Saving…";
+
+        try {
+          const { slug, markdown } = buildEntry(collection, data);
+          const path = contentDirectory
+            ? await saveToSelectedFolder(collection, slug, markdown)
+            : downloadMarkdown(collection, slug, markdown);
+
+          status.dataset.state = "success";
+          status.textContent = contentDirectory
+            ? `Saved src/content/${path}`
+            : `Downloaded ${path}. Move it into src/content/${collection}/.`;
+          form.reset();
+          collectionSelect.value = collection;
+          renderFields();
+        } catch (error) {
+          status.dataset.state = "error";
+          status.textContent = error instanceof Error ? error.message : "Could not save the entry.";
+        } finally {
+          saveButton.disabled = false;
+        }
+      });
+
+      if (typeof window.showDirectoryPicker !== "function") {
+        folderStatus.textContent =
+          "Direct folder saving is unavailable in this browser. Saving downloads a Markdown file to move into src/content/.";
+        folderStatus.dataset.state = "error";
+        saveButton.disabled = false;
+        chooseFolderButton.hidden = true;
+      }
+    </script>
+  </body>
+</html>

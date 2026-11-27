@@ -1,8 +1,8 @@
 ---
-import type { Experiment } from "../content/experiments";
+import type { CollectionEntry } from "astro:content";
 
 interface Props {
-  experiment: Experiment;
+  experiment: CollectionEntry<"experiments">;
   index: number;
 }
 
@@ -11,24 +11,27 @@ const startedDate = new Intl.DateTimeFormat("en", {
   month: "short",
   year: "numeric",
   timeZone: "UTC",
-}).format(new Date(experiment.started));
+}).format(experiment.data.started);
 ---
 
-<article class="experiment-card" id={experiment.slug}>
+<article class="experiment-card filterable" id={experiment.id} data-language={experiment.data.language}>
   <div class="experiment-meta">
-    <span class="status-badge" data-status={experiment.status.toLowerCase()}>
+    <span class="status-badge" data-status={experiment.data.status.toLowerCase()}>
       <span class="status-light" aria-hidden="true"></span>
-      {experiment.status}
+      {experiment.data.status}
     </span>
-    <time datetime={experiment.started}>STARTED {startedDate}</time>
+    <time datetime={experiment.data.started.toISOString().slice(0, 10)}>STARTED {startedDate}</time>
   </div>
-  <p class="experiment-category">{experiment.category} <span>·</span> LOG {String(index).padStart(2, "0")}</p>
-  <h3>{experiment.title}</h3>
-  <p class="experiment-summary">{experiment.summary}</p>
+  <p class="experiment-category">
+    {experiment.data.category} <span>·</span> {experiment.data.language.toUpperCase()}
+    <span>·</span> LOG {String(index).padStart(2, "0")}
+  </p>
+  <h3>{experiment.data.title}</h3>
+  <p class="experiment-summary">{experiment.data.summary}</p>
   <div class="learnings">
     <p class="learnings-label">LEARNINGS SO FAR</p>
     <ul>
-      {experiment.learnings.map((learning) => <li>{learning}</li>)}
+      {experiment.data.learnings.map((learning) => <li>{learning}</li>)}
     </ul>
   </div>
   <p class="experiment-footer">FIELD LOG / {String(index).padStart(2, "0")}</p>

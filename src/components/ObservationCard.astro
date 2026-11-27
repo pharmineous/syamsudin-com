@@ -1,24 +1,28 @@
 ---
-import type { Observation } from "../content/observations";
+import { render, type CollectionEntry } from "astro:content";
 
 interface Props {
-  observation: Observation;
+  observation: CollectionEntry<"notes">;
   index: number;
 }
 
 const { observation, index } = Astro.props;
+const { Content } = await render(observation);
 const formattedDate = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
   timeZone: "UTC",
-}).format(new Date(observation.date));
+}).format(observation.data.date);
 ---
 
-<article class="observation-card" id={observation.id}>
+<article class="observation-card filterable" id={observation.id} data-language={observation.data.language}>
   <div class="observation-meta">
-    <span class="observation-topic">{observation.topic}</span>
-    <time datetime={observation.date}>{formattedDate}</time>
+    <span class="observation-topic">
+      {observation.data.topic}
+      <span class="observation-language">{observation.data.language.toUpperCase()}</span>
+    </span>
+    <time datetime={observation.data.date.toISOString().slice(0, 10)}>{formattedDate}</time>
   </div>
-  <p class="observation-content">{observation.content}</p>
+  <div class="observation-content"><Content /></div>
   <span class="observation-index">NOTE {String(index).padStart(2, "0")}</span>
 </article>
 
@@ -47,6 +51,16 @@ const formattedDate = new Intl.DateTimeFormat("en", {
     color: var(--gold);
   }
 
+  .observation-language {
+    margin-left: 8px;
+    color: var(--quiet);
+  }
+
+  .observation-language::before {
+    padding-right: 8px;
+    content: "·";
+  }
+
   .observation-meta time {
     color: var(--quiet);
   }
@@ -58,6 +72,10 @@ const formattedDate = new Intl.DateTimeFormat("en", {
     font-family: var(--serif);
     font-size: clamp(20px, 2.1vw, 25px);
     line-height: 1.2;
+  }
+
+  .observation-content :global(p) {
+    margin: 0;
   }
 
   .observation-index {

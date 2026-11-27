@@ -1,28 +1,37 @@
 ---
-import type { Article } from "../content/articles";
+import type { CollectionEntry } from "astro:content";
 
 interface Props {
-  article: Article;
+  article: CollectionEntry<"articles">;
   index: number;
 }
 
 const { article, index } = Astro.props;
-const href = article.url ?? `/writing#${article.slug}`;
+const href = article.data.url ?? `/writing#${article.id}`;
 const formattedDate = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
   timeZone: "UTC",
-}).format(new Date(article.date));
+}).format(article.data.date);
 ---
 
-<a class="writing-entry" id={article.slug} href={href}>
+<a
+  class="writing-entry article-entry filterable"
+  id={article.id}
+  href={href}
+  data-language={article.data.language}
+  data-translated-summary={article.data.translatedSummary}
+>
   <span class="entry-number">{String(index).padStart(2, "0")}</span>
   <div class="entry-copy">
     <p class="entry-topic">
-      {article.category}<span aria-hidden="true">·</span>
-      <time datetime={article.date}>{formattedDate}</time>
+      {article.data.category}<span aria-hidden="true">·</span>
+      <span class="entry-language" aria-label={`Primary language: ${article.data.language.toUpperCase()}`}>
+        {article.data.language.toUpperCase()}
+      </span><span aria-hidden="true">·</span>
+      <time datetime={article.data.date.toISOString().slice(0, 10)}>{formattedDate}</time>
     </p>
-    <h3>{article.title}</h3>
-    <p class="entry-summary">{article.summary}</p>
+    <h3>{article.data.title}</h3>
+    <p class="entry-summary">{article.data.summary}</p>
   </div>
   <span class="entry-arrow" aria-hidden="true">↗</span>
 </a>
@@ -65,6 +74,10 @@ const formattedDate = new Intl.DateTimeFormat("en", {
 
   .entry-topic span {
     color: var(--quiet);
+  }
+
+  .entry-topic .entry-language {
+    color: var(--gold);
   }
 
   .entry-topic time {

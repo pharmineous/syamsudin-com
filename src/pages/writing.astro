@@ -1,8 +1,10 @@
 ---
 import ArticleCard from "../components/ArticleCard.astro";
-import { getArticles } from "../content/articles";
+import { getCollection } from "astro:content";
 
-const articles = getArticles();
+const articles = (await getCollection("articles")).sort(
+  (first, second) => second.data.date.getTime() - first.data.date.getTime(),
+);
 ---
 
 <!doctype html>
@@ -30,6 +32,14 @@ const articles = getArticles();
           <a href="/experiments">Experiments</a>
           <a href="/notes">Notes</a>
           <a href="/about">About</a>
+          <label class="language-switcher">
+            <span aria-hidden="true">LANG</span>
+            <select aria-label="Filter content language">
+              <option value="all">All</option>
+              <option value="id">ID</option>
+              <option value="en">EN</option>
+            </select>
+          </label>
         </nav>
       </header>
 
@@ -44,7 +54,7 @@ const articles = getArticles();
           </div>
           <p class="article-count">{String(articles.length).padStart(2, "0")} ENTRIES</p>
         </div>
-        <div class="writing-list">
+        <div class="writing-list" data-content-list="articles">
           {articles.map((article, index) => (
             <ArticleCard article={article} index={index + 1} />
           ))}
@@ -56,6 +66,7 @@ const articles = getArticles();
         <a href="/">BACK TO THE BEGINNING ↑</a>
       </footer>
     </main>
+    <script is:inline src="/language-filter.js"></script>
   </body>
 </html>
 
@@ -142,6 +153,24 @@ const articles = getArticles();
     gap: 31px;
     color: var(--muted);
     font-size: 11px;
+  }
+
+  .language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--quiet);
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+
+  .language-switcher select {
+    border: 1px solid var(--line);
+    padding: 4px 5px;
+    background: var(--bg);
+    color: var(--muted);
+    font: inherit;
   }
 
   .site-header nav a,
@@ -269,12 +298,29 @@ const articles = getArticles();
     }
 
     .site-header {
-      height: 67px;
+      height: auto;
+      min-height: 67px;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+      padding: 10px 0;
     }
 
     .site-header nav {
-      gap: 14px;
-      font-size: 9px;
+      order: 3;
+      width: 100%;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 8px;
+    }
+
+    .language-switcher {
+      gap: 4px;
+      font-size: 7px;
+    }
+
+    .language-switcher select {
+      padding: 2px 3px;
+      font-size: 8px;
     }
 
     .publication-mark {
