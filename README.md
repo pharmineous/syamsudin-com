@@ -62,6 +62,33 @@ the title and link continue to represent the article's primary language. Article
 point to published LinkedIn articles; otherwise, article cards link to their entry in the
 Writing archive. No content is machine-translated.
 
+## Site images
+
+Images are stored in `public/images/` and served from this site; pages do not load article
+thumbnails or the hero image from a remote image host.
+
+- Set the homepage hero image path and alt text in `src/site-config.ts`. Keep the image file
+  under `public/images/`.
+- Article Markdown can set `image` (a `/images/...` path) and `imageAlt` together. The
+  development `/admin` form has optional fields for both; add the image file to
+  `public/images/` before publishing.
+- Use descriptive alt text. Remote URLs and paths outside `public/images/` are not accepted
+  for article thumbnails.
+
+Asset sources and terms:
+
+- `data-analytics.webp`, `delegation-systems.webp`, `vibe-coding.webp`, and
+  `work-collaboration.webp` are Unsplash selections. The Unsplash License allows free use
+  without required attribution: <https://unsplash.com/license>.
+- `code-editor-unsplash.webp` and `solo-workspace-unsplash.webp` are local crops of
+  [this code-editor photo](https://images.unsplash.com/photo-1555066931-4365d14bab8c) and
+  [this workspace photo](https://images.unsplash.com/photo-1498050108023-c5249f4df085).
+- `hero-field-notes.webp` is generated with the Photon model through
+  [AI Horde](https://aihorde.net/). Its terms allow use of generated outputs and note that
+  anonymous text-to-image outputs and their metadata (including prompts) are shared with
+  LAION:
+  <https://aihorde.net/api/v2/documents/terms?format=markdown>.
+
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).

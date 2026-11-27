@@ -15,13 +15,22 @@ const formattedDate = new Intl.DateTimeFormat("en", {
 ---
 
 <a
-  class="writing-entry article-entry filterable"
+  class={`writing-entry article-entry filterable${article.data.image ? " has-thumbnail" : ""}`}
   id={article.id}
   href={href}
   data-language={article.data.language}
   data-translated-summary={article.data.translatedSummary}
 >
   <span class="entry-number">{String(index).padStart(2, "0")}</span>
+  {article.data.image && (
+    <img
+      class="entry-thumbnail"
+      src={article.data.image}
+      alt={article.data.imageAlt ?? ""}
+      loading="lazy"
+      decoding="async"
+    />
+  )}
   <div class="entry-copy">
     <p class="entry-topic">
       {article.data.category}<span aria-hidden="true">·</span>
@@ -47,6 +56,18 @@ const formattedDate = new Intl.DateTimeFormat("en", {
     color: var(--text);
     text-decoration: none;
     transition: color 180ms ease;
+  }
+
+  .writing-entry.has-thumbnail {
+    grid-template-columns: 48px minmax(110px, 160px) minmax(0, 1fr) 24px;
+  }
+
+  .entry-thumbnail {
+    display: block;
+    width: 100%;
+    height: 96px;
+    object-fit: cover;
+    background: var(--surface);
   }
 
   .entry-number,
@@ -129,6 +150,14 @@ const formattedDate = new Intl.DateTimeFormat("en", {
       grid-template-columns: 28px minmax(0, 1fr) 15px;
       gap: 10px;
       padding: 22px 0;
+    }
+
+    .writing-entry.has-thumbnail {
+      grid-template-columns: 28px 68px minmax(0, 1fr) 15px;
+    }
+
+    .entry-thumbnail {
+      height: 64px;
     }
 
     .entry-copy h3 {

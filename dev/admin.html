@@ -318,6 +318,8 @@
           ["summary", "Summary", "textarea", true, true],
           ["translatedSummary", "Summary in the other language (optional; write it yourself)", "textarea", false, true],
           ["url", "LinkedIn article URL (optional)", "url", false, false],
+          ["image", "Local thumbnail path (optional, e.g. /images/example.webp)", "text", false, false],
+          ["imageAlt", "Thumbnail description for screen readers", "text", false, false],
           ["body", "Draft / reference text (optional)", "textarea", false, true],
         ],
         notes: [
@@ -384,6 +386,8 @@
         if (collection === "articles") {
           const url = data.url.trim();
           const translatedSummary = data.translatedSummary.trim();
+          const image = data.image.trim();
+          const imageAlt = data.imageAlt.trim();
           if (url) {
             let parsedUrl;
             try {
@@ -395,6 +399,12 @@
               throw new Error("Article URL must be a valid HTTPS link.");
             }
           }
+          if (image && (!/^\/images\/[a-zA-Z0-9._/-]+$/.test(image) || image.split("/").includes(".."))) {
+            throw new Error("Thumbnail path must point to a file in public/images/.");
+          }
+          if (Boolean(image) !== Boolean(imageAlt)) {
+            throw new Error("Provide both a local thumbnail path and its description, or leave both empty.");
+          }
           frontmatter = [
             `title: ${JSON.stringify(data.title.trim())}`,
             `language: ${JSON.stringify(data.language)}`,
@@ -403,6 +413,8 @@
             ...(translatedSummary ? [`translatedSummary: ${JSON.stringify(translatedSummary)}`] : []),
             `category: ${JSON.stringify(data.category.trim())}`,
             ...(url ? [`url: ${JSON.stringify(url)}`] : []),
+            ...(image ? [`image: ${JSON.stringify(image)}`] : []),
+            ...(imageAlt ? [`imageAlt: ${JSON.stringify(imageAlt)}`] : []),
           ];
           body = data.body.trim();
           source = data.title;
